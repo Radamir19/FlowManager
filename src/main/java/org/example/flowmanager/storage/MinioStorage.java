@@ -1,10 +1,13 @@
 package org.example.flowmanager.storage;
 
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.InputStream;
 
 @Component
 @RequiredArgsConstructor
@@ -18,6 +21,14 @@ public class MinioStorage {
                         .object(key)
                         .stream(file.getInputStream(), file.getSize(), -1)
                         .contentType(file.getContentType())
+                        .build());
+    }
+
+    public InputStream download(String key, String bucketName) throws Exception {
+        return minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(key)
                         .build());
     }
 }
