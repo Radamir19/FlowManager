@@ -6,6 +6,7 @@ import org.example.flowmanager.messaging.event.FileConvertedEvent;
 import org.example.flowmanager.messaging.event.FileToConvertEvent;
 import org.example.flowmanager.model.status.FileStatus;
 import org.example.flowmanager.model.status.InboxStatus;
+import org.example.flowmanager.service.ConvertionStatusService;
 import org.example.flowmanager.service.FileService;
 import org.example.flowmanager.service.InboxService;
 import org.example.flowmanager.service.util.FileWorker;
@@ -20,8 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class FileFailedListener {
-    private final InboxService inboxService;
-    private final FileService fileService;
+    private final ConvertionStatusService statusService;
     private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "${app.kafka.topics.failed_topic}")
@@ -32,7 +32,6 @@ public class FileFailedListener {
         }
         FileToConvertEvent event = objectMapper.treeToValue(node, FileToConvertEvent.class);
         log.warn("Файл {} не удалось конвертировать, попробуйте ещё раз(принимаем только .txt/.png/.jpg/.zip)", FileWorker.getFileName(event.key()));
-        fileService.updateStatus(null, event.eventId(), FileStatus.NEW.name(), FileStatus.ERROR.name());
-        inboxService.claim(event.eventId(), List.of(InboxStatus.RECEIVED.name()), InboxStatus.ERROR.name());
+        statusService.updateStatusForFileAndInbox(null, event.eventId(), FileStatus.NEW.name(), FileStatus.ERROR.name(), List.of(InboxStatus.RECEIVED.name()), InboxStatus.ERROR.name());
     }
 }

@@ -2,6 +2,8 @@ package org.example.flowmanager.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.flowmanager.exception.FileConvertionFailedException;
+import org.example.flowmanager.exception.FileNotFoundException;
 import org.example.flowmanager.model.FileEntity;
 import org.example.flowmanager.model.dto.FileDownloadResponse;
 import org.example.flowmanager.model.dto.FileUploadedEvent;
@@ -31,7 +33,6 @@ public class FlowManagerService {
     private String key;
 
 
-    @Transactional
     public FileUploadedEvent uploadFile(MultipartFile file) {
         String sourceKey = key + "/" + file.getOriginalFilename();
         FileUploadedEvent event = null;
@@ -53,7 +54,7 @@ public class FlowManagerService {
     public FileDownloadResponse getFile(UUID fileId) {
         FileEntity entity = fileRepository.findByIdWhereStatusIsConverted(fileId);
         if (entity == null) {
-            throw new RuntimeException("Сконвертированный файл не найден или еще не готов");
+            throw new FileNotFoundException("Сконвертированный файл не найден или еще не готов");
         }
 
         try {
@@ -66,7 +67,7 @@ public class FlowManagerService {
                     : originalName + ".pdf";
             return new FileDownloadResponse(resource, pdfName);
         } catch (Exception e) {
-            throw new RuntimeException("Ошибка при скачивании файла", e);
+            throw new FileConvertionFailedException("Ошибка при скачивании файла");
         }
     }
 
