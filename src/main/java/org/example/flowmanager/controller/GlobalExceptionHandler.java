@@ -3,6 +3,7 @@ package org.example.flowmanager.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.example.flowmanager.exception.FileConvertionFailedException;
 import org.example.flowmanager.exception.FileNotFoundException;
+import org.example.flowmanager.exception.UploadLimitException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,6 +20,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FileConvertionFailedException.class)
     public ProblemDetail handleNotFound(FileConvertionFailedException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, e.getMessage());
+    }
+
+    @ExceptionHandler(UploadLimitException.class)
+    public ProblemDetail handleUploadLimit(UploadLimitException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

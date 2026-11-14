@@ -25,8 +25,9 @@ public class MinioHandlerController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Загрузка файла в MinIO хранилище")
-    public ResponseEntity<FileUploadedEvent> uploadFileToMinio(@RequestParam MultipartFile file) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(managerService.uploadFile(file));
+    public ResponseEntity<FileUploadedEvent> uploadFileToMinio(@RequestParam MultipartFile file,
+                                                               @RequestHeader("X-User-login") String login) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(managerService.uploadFile(file, login));
     }
 
     @GetMapping("/{id}/status")

@@ -4,19 +4,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.flowmanager.exception.FileConvertionFailedException;
 import org.example.flowmanager.exception.FileNotFoundException;
+import org.example.flowmanager.exception.UploadLimitException;
 import org.example.flowmanager.model.FileEntity;
 import org.example.flowmanager.model.dto.FileDownloadResponse;
 import org.example.flowmanager.model.dto.FileUploadedEvent;
+import org.example.flowmanager.model.dto.UserSubscription;
 import org.example.flowmanager.repository.FileRepository;
+import org.example.flowmanager.service.feign.SubscriptionClient;
 import org.example.flowmanager.storage.MinioStorage;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
@@ -26,6 +29,7 @@ public class FlowManagerService {
     private final FileRepository fileRepository;
     private final FileService fileService;
     private final MinioStorage worker;
+    private final SubscriptionClient subscriptionClient;
 
     @Value("${minio.bucket}")
     private String bucket;
@@ -33,9 +37,15 @@ public class FlowManagerService {
     private String key;
 
 
-    public FileUploadedEvent uploadFile(MultipartFile file) {
+    public FileUploadedEvent uploadFile(MultipartFile file, String login) {
         String sourceKey = key + "/" + file.getOriginalFilename();
         FileUploadedEvent event = null;
+        UserSubscription subscription = subscriptionClient.getSubscription(login);
+        boolean activePaid = subscription.subType().equals("PAID")
+                && subscription.expireAt().isAfter(OffsetDateTime.now());
+        if(!activePaid && file.getSize() > 100L * 1024 * 1024) {
+            throw new UploadLimitException("Файлы больше 100 МБ доступны только при действующей платной подписке");
+        }
         try {
             worker.upload(file, bucket, sourceKey);
             event = fileService.registerUploadedFile(file, bucket, sourceKey);
@@ -69,6 +79,10 @@ public class FlowManagerService {
         } catch (Exception e) {
             throw new FileConvertionFailedException("Ошибка при скачивании файла");
         }
+    }
+
+    @CacheEvict(cacheNames = "subscriptions", key = "#login")
+    public void evictSubscription(String login) {
     }
 
 }

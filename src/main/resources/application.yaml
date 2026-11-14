@@ -17,12 +17,31 @@ spring:
     consumer:
       group-id: ${KAFKA_GROUP_ID}
       auto-offset-reset: earliest
+  cache:
+    type: redis
+    redis:
+      time-to-live: 5m
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cloud:
+    openfeign:
+      client:
+        config:
+          subscription-service:
+            url: http://localhost:8086
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 210MB
 app:
   kafka:
     topics:
       to_convert: ${KAFKA_TO_CONVERT}
       converted_topic: ${KAFKA_CONVERTED_TOPIC}
       failed_topic: ${KAFKA_FAILED_TOPIC}
+      sub_expired: ${KAFKA_SUBSCRIPTION_EXPIRED}
   outbox:
     max-attempts: 5
 minio:
