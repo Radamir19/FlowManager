@@ -41,10 +41,9 @@ public class FlowManagerService {
         String sourceKey = key + "/" + file.getOriginalFilename();
         FileUploadedEvent event = null;
         UserSubscription subscription = subscriptionClient.getSubscription(login);
-        boolean activePaid = subscription.subType().equals("PAID")
-                && subscription.expireAt().isAfter(OffsetDateTime.now());
-        if(!activePaid && file.getSize() > 100L * 1024 * 1024) {
-            throw new UploadLimitException("Файлы больше 100 МБ доступны только при действующей платной подписке");
+        Long maxSize = subscription.maxFileSize();
+        if (maxSize != null && file.getSize() > maxSize) {
+            throw new UploadLimitException("Размер файла превышает ограничение подписки");
         }
         try {
             worker.upload(file, bucket, sourceKey);
@@ -79,10 +78,6 @@ public class FlowManagerService {
         } catch (Exception e) {
             throw new FileConvertionFailedException("Ошибка при скачивании файла");
         }
-    }
-
-    @CacheEvict(cacheNames = "subscriptions", key = "#login")
-    public void evictSubscription(String login) {
     }
 
 }

@@ -19,6 +19,5 @@ public class SubscriptionExpiredListener {
     public void onMessage(String message) {
         UserSubscriptionEvent event = objectMapper.readValue(message, UserSubscriptionEvent.class);
         log.info("Платная подписка у клиента с логином {} закончилась", event.login());
-        managerService.evictSubscription(event.login());
     }
 }
